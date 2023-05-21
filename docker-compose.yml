@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  
+  postgres:
+    container_name: postgres
+    image: postgres:13.3
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - .:/docker-entrypoint-initdb.d:ro,z
+    ports:
+      - 5432:5432
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
