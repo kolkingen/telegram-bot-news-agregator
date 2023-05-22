@@ -1,14 +1,18 @@
 from datetime import datetime
 
 from bs4 import BeautifulSoup, ResultSet, Tag
-from news_source import NewsSource
+
+from news_getter import NewsGetter
+from table_models import NewsSource
 
 
-class FinamCompaniesRssScrapper(NewsSource):
+class FinamCompaniesRssScrapper(NewsGetter):
     """Scrapper for downloading news about companies from Finam.ru with RSS."""
 
-    _id = "finam_companies"
-    _url = "https://www.finam.ru/analysis/conews/rsspoint/"
+    def _create_source(self) -> NewsSource:
+        return NewsSource(
+            'finam_companies', 'Finam.ru - новости компаний', 
+            'https://www.finam.ru/analysis/conews/rsspoint/')
 
     def _get_headline_items(self, response_text: str) -> ResultSet[Tag]:
         soup = BeautifulSoup(response_text, "xml")
@@ -19,13 +23,13 @@ class FinamCompaniesRssScrapper(NewsSource):
         """Returns headlines only from autor `Finam.ru`."""
         filtered_headline_items = ResultSet(items.source)
         for item in items:
-            if "Finam.ru" in item.find("a10:name").text:
+            if 'Finam.ru' in item.find('a10:name').text:
                 filtered_headline_items.append(item)
         return filtered_headline_items
 
-    def _get_url(self, item: Tag) -> str:
-        link = item.find("link").text
-        return link.split("?")[0]
+    def _get_link(self, item: Tag) -> str:
+        link = item.find('link').text
+        return link.split('?')[0]
 
     def _get_title(self, item: Tag) -> str:
         return item.find("title").text

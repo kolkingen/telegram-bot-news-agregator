@@ -1,37 +1,41 @@
 import time
 
-from finam_companies_rss_scrapper import FinamCompaniesRssScrapper
-from headline import Headline
-from investing_com_scrapper import InvestingComScrapper
-from news_source import NewsSource
+from loguru import logger
+
+from database import Database
+from table_models import Headline
+from news_getter import NewsGetter
 from ria_rss_scrapper import RiaRssScrapper
+from investing_com_scrapper import InvestingComScrapper
+from finam_companies_rss_scrapper import FinamCompaniesRssScrapper
 
-SECONDS_TO_REFRESH_NEWS = 5 * 60.0  # 5 min
+SECONDS_TO_REFRESH_NEWS = 60.0
 
 
-def get_headlines(sources: list[NewsSource]) -> list[Headline]:
+def get_headlines(getters: list[NewsGetter]) -> list[Headline]:
     """Loads news from all sources."""
-    all_news_headlines = []
-    for source in sources:
-        all_news_headlines += source.get_headlines()
-    return all_news_headlines
+    all_headlines = []
+    for getter in getters:
+        all_headlines += getter.get_headlines()
+    return all_headlines
 
 
-def print_headlines(headlines: list[Headline]) -> None:
-    print("Количество новостей:", len(headlines))
-    for h in headlines:
-        print(f"{h.source} ({h.release_time:%a %H:%M}): {h.title}")
+if __name__ == '__main__':
 
+    logger.info('Application is started.')
 
-if __name__ == "__main__":
-
-    news_sources: list[NewsSource] = [
+    news_getters: list[NewsGetter] = [
         RiaRssScrapper(),
         InvestingComScrapper(),
-        FinamCompaniesRssScrapper(),
-    ]
+        FinamCompaniesRssScrapper()]
+
+    database = Database()
+    database.insert_news_sources(news_getters)
 
     while True:
-        news_headlines = get_headlines(news_sources)
-        print_headlines(news_headlines)
+        headlines = get_headlines(news_getters)
+        new_headlines = database.filter_out_old_headlines(headlines)
+        database.insert_headlines(new_headlines)
+        logger.info(f'{len(headlines)} headlines are downloaded. '
+                    f'{len(new_headlines)} of them are new.')
         time.sleep(SECONDS_TO_REFRESH_NEWS)

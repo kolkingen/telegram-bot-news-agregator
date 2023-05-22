@@ -3,14 +3,31 @@ version: '3.9'
 services:
   
   postgres:
-    container_name: postgres
+    container_name: 'postgres_container'
     image: postgres:13.3
     environment:
-      POSTGRES_PASSWORD: password
-    volumes:
-      - .:/docker-entrypoint-initdb.d:ro,z
+      POSTGRES_PASSWORD: 'password'
     ports:
       - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - internal_network
+
+  news_agregator:
+    container_name: 'news_agregator_container'
+    build: ./news_agregator
+    image: news_agregator
+    ports:
+      - 8000:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - internal_network
 
