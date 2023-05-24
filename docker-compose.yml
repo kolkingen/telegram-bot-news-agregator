@@ -21,13 +21,26 @@ services:
 
   news_agregator:
     container_name: 'news_agregator_container'
-    build: ./news_agregator
+    build: 
+      context: ./
+      dockerfile: ./news_agregator/Dockerfile
     image: news_agregator
-    ports:
-      - 8000:8000
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal_network
+  
+  telegram_bot:
+    container_name: 'telegram_bot_container'
+    build: 
+      context: ./
+      dockerfile: ./telegram_bot/Dockerfile
+    image: telegram_bot
+    environment:
+      BOT_API_TOKEN: 'YOUR_API_TOKEN_HERE'
+    depends_on: 
+      - news_agregator
     networks:
       - internal_network
 
