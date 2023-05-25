@@ -21,7 +21,7 @@ class DatabaseConnector:
     def __new__(cls: Self) -> Self:
         if not hasattr(cls, 'instance'):
             cls.instance = super(DatabaseConnector, cls).__new__(cls)
-        logger.info('DatabaseConnector has created.')
+            logger.info('DatabaseConnector has created.')
         return cls.instance
 
     def _create_url(self) -> URL:
@@ -58,6 +58,9 @@ class DatabaseConnector:
         return self.session.query(User)\
             .filter(User.user_id == user_id).first()
 
+    def get_users(self) -> list[User]:
+        return self.session.query(User).all()
+
     def get_news_source_by_id(self, id_name: str) -> NewsSource:
         return self.session.query(NewsSource)\
             .filter(NewsSource.id_name == id_name).first()
@@ -72,6 +75,17 @@ class DatabaseConnector:
             .filter(Headline.source == source)\
             .order_by(Headline.time.desc())\
             .limit(limit).all()
+
+    def get_new_headlines(self) -> list[Headline]:
+        """Returns all new headlines and makes them not new."""
+        new_headlines = self.session.query(Headline)\
+            .filter(Headline.is_new==True)\
+            .order_by(Headline.time.desc()).all()
+        self.session.query(Headline)\
+            .filter(Headline.is_new==True)\
+            .update({Headline.is_new: False})
+        self.session.commit()
+        return new_headlines
 
     def get_user_subscriptions(self, user_id: int) -> list[str]:
         """Returns only id_names for sources in user's subscriptions."""

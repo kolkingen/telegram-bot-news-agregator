@@ -7,7 +7,7 @@ Both `news_agregator` and `telegram_bot` use it.
 from datetime import datetime
 
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, DateTime, ForeignKey, String, Integer
+from sqlalchemy import Column, DateTime, ForeignKey, String, Integer, Boolean
 
 DeclarativeBase = declarative_base()
 
@@ -35,10 +35,11 @@ class Headline(DeclarativeBase):
 
     __tablename__ = 'headlines'
 
-    source = Column(String, ForeignKey(NewsSource.id_name))
     link = Column(String, primary_key=True)
+    source = Column(String, ForeignKey(NewsSource.id_name))
     title = Column(String, nullable=False)
     time = Column(DateTime, nullable=False)
+    is_new = Column(Boolean, nullable=False, default=True)
 
     def __init__(
         self, source: str, link: str, 

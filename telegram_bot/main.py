@@ -1,11 +1,12 @@
 from os import getenv
+import asyncio
 
-from telebot import TeleBot
-from telebot.apihelper import ApiTelegramException
+from telebot.async_telebot import AsyncTeleBot
 from loguru import logger
 
 from message_handlers import register_message_handlers
 from callback_handlers import register_callback_handlers
+from new_headlines_check_loop import new_headlines_check_loop
 
 
 def load_token() -> str:
@@ -20,23 +21,18 @@ def load_token() -> str:
 	return token
 
 
-def check_if_bot_works(bot: TeleBot) -> None:
-	"""Tests bot by getting info about bot from telegram server."""
-
-	try:
-		bot.get_me()
-	except ApiTelegramException:
-		logger.error('API token is not valid.')
-		exit(1)
+async def start_main_loop(bot: AsyncTeleBot):
+	await asyncio.gather(
+		bot.infinity_polling(), 
+		new_headlines_check_loop(bot))
 
 
 if __name__ == '__main__':
 
 	logger.info('Application has started.')
 
-	bot = TeleBot(load_token())
-	check_if_bot_works(bot)
+	bot = AsyncTeleBot(load_token(), parse_mode='markdown')
 	register_message_handlers(bot)
 	register_callback_handlers(bot)
 
-	bot.infinity_polling()
+	asyncio.run(start_main_loop(bot))

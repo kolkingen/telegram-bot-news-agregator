@@ -9,10 +9,11 @@ from database import DatabaseConnector
 database = DatabaseConnector()
 
 
-def _format_headline(headline: Headline) -> str:
+def format_headline(headline: Headline) -> str:
     """Formats headline for showing to user. It uses markdown style."""
     source = database.get_news_source_by_id(headline.source)
-    return f'[{source.show_name}]({headline.link}) ({headline.time:%d.%m.%y %H:%M:%S})\n\n{headline.title}'
+    return (f'[{source.show_name}]({headline.link}) '
+            f'({headline.time:%d.%m.%y %H:%M:%S})\n\n{headline.title}')
 
 
 def create_inline_keyboard_for_sources(
@@ -50,14 +51,14 @@ def get_headlines_for_user(user_id: int, source: str | None = None) -> None:
     user = database.get_user_by_id(user_id)
     if source is None: source = user.default_source
     headlines = database.get_last_headlines_by_source(source, user.news_count)
-    return [_format_headline(h) for h in headlines]
+    return [format_headline(h) for h in headlines]
 
 
-def edit_message_after_choosing(
+async def edit_message_after_choosing(
     bot: TeleBot, message: Message, choice: str
 ) -> None:
     """Edits message with inline keyboard. Removes keyboard, prints choice."""
 
     new_text = ' '.join((message.text, messages.you_have_chosen, choice))
-    bot.edit_message_text(
+    await bot.edit_message_text(
         new_text, message.chat.id, message.id, reply_markup=None)

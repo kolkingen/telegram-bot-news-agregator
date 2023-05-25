@@ -10,34 +10,46 @@ from database import DatabaseConnector
 database = DatabaseConnector()
 
 
-def _handle_callback_from_source(callback: CallbackQuery, bot: TeleBot) -> None:
+async def _handle_callback_from_source(
+    callback: CallbackQuery, bot: TeleBot
+) -> None:
+    
     source = database.get_news_source_by_id(callback.data.split()[-1])
-    edit_message_after_choosing(bot, callback.message, source.show_name)
-    for h in get_headlines_for_user(callback.from_user.id, source.id_name):
-        bot.send_message(callback.message.chat.id, h, parse_mode='markdown')
+    await edit_message_after_choosing(bot, callback.message, source.show_name)
+    for text in get_headlines_for_user(callback.from_user.id, source.id_name):
+        await bot.send_message(callback.message.chat.id, text)
     database.add_user_request(
         callback.from_user.id, callback.data, callback.message.date)
 
 
-def _handle_callback_default(callback: CallbackQuery, bot: TeleBot) -> None:
+async def _handle_callback_default(
+    callback: CallbackQuery, bot: TeleBot
+) -> None:
+    
     source = database.get_news_source_by_id(callback.data.split()[-1])
     database.change_user(callback.from_user.id, default_source=source.id_name)
-    edit_message_after_choosing(bot, callback.message, source.show_name)
+    await edit_message_after_choosing(bot, callback.message, source.show_name)
     database.add_user_request(
         callback.from_user.id, callback.data, callback.message.date)
 
 
-def _handle_callback_update_n(callback: CallbackQuery, bot: TeleBot) -> None:
+async def _handle_callback_update_n(
+    callback: CallbackQuery, bot: TeleBot
+) -> None:
+    
     n = int(callback.data.split()[-1])
     database.change_user(callback.from_user.id, news_count=n)
-    edit_message_after_choosing(bot, callback.message, str(n))
+    await edit_message_after_choosing(bot, callback.message, str(n))
     database.add_user_request(
         callback.from_user.id, callback.data, callback.message.date)
 
 
-def _handle_callback_subscriptions(callback: CallbackQuery, bot: TeleBot) -> None:
+async def _handle_callback_subscriptions(
+    callback: CallbackQuery, bot: TeleBot
+) -> None:
+    
     source = database.get_news_source_by_id(callback.data.split()[-1])
-    edit_message_after_choosing(bot, callback.message, source.show_name)
+    await edit_message_after_choosing(bot, callback.message, source.show_name)
     user_subscriptions = database.get_user_subscriptions(callback.from_user.id)
     if source.id_name in user_subscriptions:
         database.delete_subscription(callback.from_user.id, source.id_name)
@@ -47,9 +59,9 @@ def _handle_callback_subscriptions(callback: CallbackQuery, bot: TeleBot) -> Non
         callback.from_user.id, callback.data, callback.message.date)
 
 
-def _get_command_filter(source: str) -> Callable[[CallbackQuery], bool]:
+def _get_command_filter(command: str) -> Callable[[CallbackQuery], bool]:
     def filter(callback: CallbackQuery) -> bool:
-        return callback.data.startswith(source)
+        return callback.data.startswith(command)
     return filter
 
 
